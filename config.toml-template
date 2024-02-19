@@ -1,0 +1,11 @@
+# config.toml 
+#Remove -template
+url = "https://www.ebgames.com.au/search?q=one+piece+card+game"
+searchString = "OP-09"
+recipientEmail = "example@example.com"
+user = "your_email@gmail.com"
+pass = "your_password"
+from = "your_email@gmail.com"
+subject = "Alert: New OP Set Found"
+service = "Gmail"
+message = ""

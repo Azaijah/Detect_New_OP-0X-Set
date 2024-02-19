@@ -1,7 +1,27 @@
 import puppeteer from 'puppeteer';
 import * as nodemailer from 'nodemailer';
+import * as fs from 'fs';
+import * as toml from '@iarna/toml';
 
-async function scrapeAndCheck(url: string, searchString: string): Promise<{ message: string, found: boolean }> {
+interface Config {
+    url: string;
+    searchString: string;
+    recipientEmail: string;
+    user: string;
+    pass: string;
+    from: string;
+    subject: string;
+    service : string
+    message : string
+}
+
+async function loadConfig(): Promise<Config> {
+    const configFileContents = fs.readFileSync('./config.toml', 'utf-8');
+    const config = toml.parse(configFileContents);
+    return config as unknown as Config;
+}
+
+async function scrapeAndCheck(url: string, searchString: string): Promise<boolean> {
   try {
       const browser = await puppeteer.launch();
       const page = await browser.newPage();
@@ -12,16 +32,12 @@ async function scrapeAndCheck(url: string, searchString: string): Promise<{ mess
 
  
       if (content.includes(searchString)) {
-          const message = `NEW OP SET: "${searchString}"`;
-          console.log(message);
           await browser.close();
-        
-          return { message, found: true };
+          return true;
       } else {
           console.log(`"${searchString}" not found on the page.`);
           await browser.close();
-      
-          return { message: `"${searchString}" not found on the page.`, found: false };
+          return false;
       }
   } catch (error) {
       console.error(`Error scraping ${url}: `, error instanceof Error ? error.message : String(error));
@@ -29,25 +45,25 @@ async function scrapeAndCheck(url: string, searchString: string): Promise<{ mess
   }
 }
 
-async function sendAlertEmail(url: string, searchString: string, recipientEmail: string): Promise<void> {
+async function sendAlertEmail(config: Config): Promise<void> {
     try {
-        const {message, found} = await scrapeAndCheck(url, searchString);
+        const found = await scrapeAndCheck(config.url, config.searchString);
         if (!found) {
           return
         }
         const transporter = nodemailer.createTransport({
-            service: 'Gmail',
+            service: config.service,
             auth: {
-                user: '',
-                pass: '' 
+                user: config.user,
+                pass: config.pass 
             }
         });
 
         const mailOptions = {
-            from: '',
-            to: recipientEmail,
-            subject: '',
-            text: message
+            from: config.from,
+            to: config.recipientEmail,
+            subject: config.subject,
+            text: config.message,
         };
 
         transporter.sendMail(mailOptions, (error, info) => {
@@ -62,10 +78,13 @@ async function sendAlertEmail(url: string, searchString: string, recipientEmail:
     }
 }
 
+async function main() {
+    const config = await loadConfig();
+    console.log("test");
+    
+    setInterval(() => {
+        sendAlertEmail(config);
+    }, 120000); // 
+}
 
-const url = 'https://www.ebgames.com.au/search?q=one+piece+card+game';
-const searchString = "OP-09";
-const recipientEmail = '';
-sendAlertEmail(url, searchString, recipientEmail);
-
-
+main();

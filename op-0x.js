@@ -38,9 +38,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var puppeteer_1 = require("puppeteer");
 var nodemailer = require("nodemailer");
+var fs = require("fs");
+var toml = require("@iarna/toml");
+function loadConfig() {
+    return __awaiter(this, void 0, void 0, function () {
+        var configFileContents, config;
+        return __generator(this, function (_a) {
+            configFileContents = fs.readFileSync('./config.toml', 'utf-8');
+            config = toml.parse(configFileContents);
+            return [2 /*return*/, config];
+        });
+    });
+}
 function scrapeAndCheck(url, searchString) {
     return __awaiter(this, void 0, void 0, function () {
-        var browser, page, content, message, error_1;
+        var browser, page, content, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -61,18 +73,16 @@ function scrapeAndCheck(url, searchString) {
                 case 5:
                     content = _a.sent();
                     if (!content.includes(searchString)) return [3 /*break*/, 7];
-                    message = "NEW OP SET: \"".concat(searchString, "\"");
-                    console.log(message);
                     return [4 /*yield*/, browser.close()];
                 case 6:
                     _a.sent();
-                    return [2 /*return*/, { message: message, found: true }];
+                    return [2 /*return*/, true];
                 case 7:
                     console.log("\"".concat(searchString, "\" not found on the page."));
                     return [4 /*yield*/, browser.close()];
                 case 8:
                     _a.sent();
-                    return [2 /*return*/, { message: "\"".concat(searchString, "\" not found on the page."), found: false }];
+                    return [2 /*return*/, false];
                 case 9: return [3 /*break*/, 11];
                 case 10:
                     error_1 = _a.sent();
@@ -83,31 +93,31 @@ function scrapeAndCheck(url, searchString) {
         });
     });
 }
-function sendAlertEmail(url, searchString, recipientEmail) {
+function sendAlertEmail(config) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, message, found, transporter, mailOptions, error_2;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var found, transporter, mailOptions, error_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
                 case 0:
-                    _b.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, scrapeAndCheck(url, searchString)];
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, scrapeAndCheck(config.url, config.searchString)];
                 case 1:
-                    _a = _b.sent(), message = _a.message, found = _a.found;
+                    found = _a.sent();
                     if (!found) {
                         return [2 /*return*/];
                     }
                     transporter = nodemailer.createTransport({
-                        service: 'Gmail',
+                        service: config.service,
                         auth: {
-                            user: '',
-                            pass: ''
+                            user: config.user,
+                            pass: config.pass
                         }
                     });
                     mailOptions = {
-                        from: '',
-                        to: recipientEmail,
-                        subject: '',
-                        text: message
+                        from: config.from,
+                        to: config.recipientEmail,
+                        subject: config.subject,
+                        text: config.message,
                     };
                     transporter.sendMail(mailOptions, function (error, info) {
                         if (error) {
@@ -119,7 +129,7 @@ function sendAlertEmail(url, searchString, recipientEmail) {
                     });
                     return [3 /*break*/, 3];
                 case 2:
-                    error_2 = _b.sent();
+                    error_2 = _a.sent();
                     console.error('Failed to send email:', error_2);
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];
@@ -127,7 +137,21 @@ function sendAlertEmail(url, searchString, recipientEmail) {
         });
     });
 }
-var url = 'https://www.ebgames.com.au/search?q=one+piece+card+game';
-var searchString = "OP-09";
-var recipientEmail = '';
-sendAlertEmail(url, searchString, recipientEmail);
+function main() {
+    return __awaiter(this, void 0, void 0, function () {
+        var config;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, loadConfig()];
+                case 1:
+                    config = _a.sent();
+                    console.log("test");
+                    setInterval(function () {
+                        sendAlertEmail(config);
+                    }, 120000); // 
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+main();

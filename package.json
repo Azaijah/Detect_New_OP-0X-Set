@@ -18,6 +18,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@iarna/toml": "^2.2.5",
     "axios": "^1.6.7",
     "cheerio": "^1.0.0-rc.12",
     "nodemailer": "^6.9.9"
