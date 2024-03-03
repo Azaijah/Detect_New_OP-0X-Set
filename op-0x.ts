@@ -24,6 +24,10 @@ async function loadConfig(): Promise<Config> {
 async function scrapeAndCheck(url: string, searchString: string): Promise<boolean> {
   try {
       const browser = await puppeteer.launch();
+ // --use this code if on a raspberry pi     const browser = await puppeteer.launch({
+ // executablePath: '/usr/bin/chromium-browser', 
+//  args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+//}); 
       const page = await browser.newPage();
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36');
       await page.goto(url, { waitUntil: 'networkidle2' });
